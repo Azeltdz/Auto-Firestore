@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Azelt Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #141a24;
+    --panel-border: #232c3a;
+    --text: #e6e9ef;
+    --muted: #8b93a5;
+    --accent: #35d0b2;
+    --accent-dim: #1f7c69;
+    --warn: #e0a94b;
+    --err: #e0605a;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 48px 20px;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(53,208,178,0.08), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(53,208,178,0.05), transparent 40%);
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: 30px;
+    margin: 0 0 8px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 32px;
+    line-height: 1.5;
+  }
+  .sub code { font-family: var(--mono); color: var(--text); background: #1c2431; padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 130px;
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 14px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  textarea:focus { outline: none; border-color: var(--accent-dim); }
+  textarea::placeholder { color: #4a5265; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .coll {
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #0f1520;
+  }
+  .coll .name { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .coll .count { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .total {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .total strong { color: var(--text); }
+
+  button#seedBtn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #06231d;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  button#seedBtn:hover:not(:disabled) { background: #4be0c4; }
+  button#seedBtn:active:not(:disabled) { transform: scale(0.99); }
+  button#seedBtn:disabled { background: #2a3340; color: #5c6576; cursor: not-allowed; }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 18px;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+  }
+  .dot.ok { background: var(--accent); }
+  .dot.busy { background: var(--warn); animation: pulse 1s infinite; }
+  .dot.error { background: var(--err); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  #log {
+    background: #05080d;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    height: 230px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  #log .line { display: block; }
+  #log .ok { color: var(--accent); }
+  #log .err { color: var(--err); }
+  #log .info { color: var(--muted); }
+
+  .filehelp {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0 0 14px;
+  }
+  .filehelp code { font-family: var(--mono); color: var(--text); background: #1c2431; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  input[type="file"] {
+    display: block;
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--muted);
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  input[type="file"]::file-selector-button {
+    background: var(--accent-dim);
+    color: #eafff9;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 12.5px;
+    margin-right: 12px;
+    cursor: pointer;
+  }
+
+  .field-row { margin-bottom: 14px; }
+  .field-row label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field-row input[type="text"] {
+    width: 100%;
+    background: #0a0e14;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+  .field-row input[type="text"]:focus { outline: none; border-color: var(--accent-dim); }
+
+  #preview {
+    margin-bottom: 14px;
+    max-height: 180px;
+    overflow: auto;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+  }
+  #preview table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  #preview th, #preview td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--panel-border);
+    white-space: nowrap;
+  }
+  #preview th { color: var(--accent); background: #0f1520; position: sticky; top: 0; }
+  #preview td { color: var(--text); }
+  #preview .sheet-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    padding: 8px 10px 2px;
+  }
+  #preview .empty { padding: 14px; color: var(--muted); font-size: 13px; }
+
+  button#uploadBtn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #06231d;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  button#uploadBtn:hover:not(:disabled) { background: #4be0c4; }
+  button#uploadBtn:active:not(:disabled) { transform: scale(0.99); }
+  button#uploadBtn:disabled { background: #2a3340; color: #5c6576; cursor: not-allowed; }
+
+  #uploadLog {
+    background: #05080d;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  #uploadLog .line { display: block; }
+  #uploadLog .ok { color: var(--accent); }
+  #uploadLog .err { color: var(--err); }
+  #uploadLog .info { color: var(--muted); }
+
+  footer {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sub">
+    Paste your Firebase project config, then seed all 30 dummy records from Part B into
+    <code>categories</code>, <code>users</code>, <code>content</code>, <code>subscriptions</code>,
+    <code>watchHistory</code>, and <code>notifications</code> — no build tools, just this file opened in a browser.
+  </p>
+  <p class="sub" style="margin-top:-20px;">
+    The Firebase config lives directly in the code below (search for
+    <code>const firebaseConfig</code> near the bottom of the file). To point this tool at a
+    different project, that's the only block you need to replace — everything else works
+    automatically once it's updated.
+  </p>
+
+  <div class="card">
+    <h2>1. What will be written</h2>
+    <div class="grid">
+      <div class="coll"><div class="name">categories</div><div class="count">5 records</div></div>
+      <div class="coll"><div class="name">users</div><div class="count">6 records</div></div>
+      <div class="coll"><div class="name">content</div><div class="count">8 records</div></div>
+      <div class="coll"><div class="name">subscriptions</div><div class="count">5 records</div></div>
+      <div class="coll"><div class="name">watchHistory</div><div class="count">4 records</div></div>
+      <div class="coll"><div class="name">notifications</div><div class="count">2 records</div></div>
+    </div>
+    <div class="total">Total: <strong>30 documents</strong> across 6 collections</div>
+  </div>
+
+  <div class="card">
+    <h2>2. Seed built-in dummy data</h2>
+    <button id="seedBtn">Seed 30 records into Firestore</button>
+    <div class="status-line"><span class="dot" id="statusDot"></span><span id="statusText">Ready to seed.</span></div>
+    <div id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>3. Or upload your own CSV / Excel file</h2>
+    <p class="filehelp">
+      Convention: the <strong>first column</strong> of each sheet is used as the Firestore
+      document ID; every other column becomes a field on that document. A workbook with
+      multiple sheets (e.g. one tab per collection: <code>categories</code>, <code>users</code>,
+      <code>content</code>…) uploads each sheet to a collection named after that sheet.
+      A single CSV uploads to the collection name you type below.
+    </p>
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" />
+    <div class="field-row">
+      <label for="csvCollection">Collection name (used for CSV / single-sheet files only)</label>
+      <input type="text" id="csvCollection" placeholder="e.g. content" />
+    </div>
+    <div id="preview"></div>
+    <button id="uploadBtn" disabled>Upload file to Firestore</button>
+    <div class="status-line"><span class="dot" id="uploadDot"></span><span id="uploadStatusText">Choose a file to begin.</span></div>
+    <div id="uploadLog"></div>
+  </div>
+
+  <footer>
+    Note: your Firestore security rules must allow writes for this to work — the default
+    "test mode" rules (open for 30 days) are enough for this practice activity. Nothing is
+    sent anywhere except directly from your browser to your own Firebase project.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const ts = (dateStr) => firebase.firestore.Timestamp.fromDate(new Date(dateStr));
+
+  function buildData() {
+    return {
+      categories: {
+        CAT001: { name: "Poetry", language: "Multi-language" },
+        CAT002: { name: "Movies", language: "Multi-language" },
+        CAT003: { name: "Motivational", language: "Multi-language" },
+        CAT004: { name: "Comedy", language: "Multi-language" },
+        CAT005: { name: "Devotional", language: "Multi-language" },
+      },
+      users: {
+        U001: { fullName: "Ravi Kumar", email: "ravi.kumar@example.com", languagePreference: "Haryanvi", deviceType: "Android" },
+        U002: { fullName: "Sunita Devi", email: "sunita.devi@example.com", languagePreference: "Rajasthani", deviceType: "Android" },
+        U003: { fullName: "Amit Yadav", email: "amit.yadav@example.com", languagePreference: "Bhojpuri", deviceType: "iOS" },
+        U004: { fullName: "Pooja Sharma", email: "pooja.sharma@example.com", languagePreference: "Punjabi", deviceType: "Web" },
+        U005: { fullName: "Deepak Singh", email: "deepak.singh@example.com", languagePreference: "Haryanvi", deviceType: "Android TV" },
+        U006: { fullName: "Kavita Rani", email: "kavita.rani@example.com", languagePreference: "Bhojpuri", deviceType: "iOS" },
+      },
+      content: {
+        C001: { title: "Mann Ki Baatein", type: "poetry", categoryId: "CAT001", language: "Haryanvi", viewCount: 15320 },
+        C002: { title: "Rangeela Rajasthan", type: "movie", categoryId: "CAT002", language: "Rajasthani", viewCount: 48210 },
+        C003: { title: "Uth Jaag Musafir", type: "motivational", categoryId: "CAT003", language: "Haryanvi", viewCount: 9870 },
+        C004: { title: "Bhole Baba Bhajan", type: "devotional", categoryId: "CAT005", language: "Bhojpuri", viewCount: 22110 },
+        C005: { title: "Chaupal Comedy Night", type: "comedy", categoryId: "CAT004", language: "Punjabi", viewCount: 31234 },
+        C006: { title: "Basanti Bahaar", type: "movie", categoryId: "CAT002", language: "Bhojpuri", viewCount: 52310 },
+        C007: { title: "Dil Ki Awaaz", type: "poetry", categoryId: "CAT001", language: "Rajasthani", viewCount: 7621 },
+        C008: { title: "Safar Zindagi Ka", type: "motivational", categoryId: "CAT003", language: "Punjabi", viewCount: 13980 },
+      },
+      subscriptions: {
+        S001: { userId: "U001", plan: "Monthly", status: "active", price: 199 },
+        S002: { userId: "U002", plan: "Yearly", status: "active", price: 999 },
+        S003: { userId: "U003", plan: "Monthly", status: "expired", price: 199 },
+        S004: { userId: "U005", plan: "Quarterly", status: "active", price: 499 },
+        S005: { userId: "U006", plan: "Monthly", status: "active", price: 199 },
+      },
+      watchHistory: {
+        H001: { userId: "U001", contentId: "C001", completed: true, lastWatchedAt: ts("2026-06-10") },
+        H002: { userId: "U002", contentId: "C002", completed: false, lastWatchedAt: ts("2026-06-11") },
+        H003: { userId: "U004", contentId: "C005", completed: true, lastWatchedAt: ts("2026-06-12") },
+        H004: { userId: "U006", contentId: "C004", completed: false, lastWatchedAt: ts("2026-06-12") },
+      },
+      notifications: {
+        N001: { userId: "U003", title: "Subscription Expiring Soon", type: "billing", isRead: false },
+        N002: { userId: "U001", title: "New Content Added", type: "content", isRead: true },
+      },
+    };
+  }
+
+  const logEl = document.getElementById("log");
+  const dot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+  const btn = document.getElementById("seedBtn");
+
+  function log(msg, cls) {
+    const line = document.createElement("span");
+    line.className = "line" + (cls ? " " + cls : "");
+    line.textContent = msg;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setStatus(text, state) {
+    statusText.textContent = text;
+    dot.className = "dot" + (state ? " " + state : "");
+  }
+
+  // ===================================================================
+  // This is the ONLY block you need to replace to point this tool at a
+  // different Firebase project — paste the object exactly as copied
+  // from Firebase Console > Project settings > General > Your apps.
+  // ===================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyAaNGtXHb77YVH0wXohRBQ3tnbOv_wDJ8E",
+    authDomain: "test-e0fc7.firebaseapp.com",
+    projectId: "test-e0fc7",
+    storageBucket: "test-e0fc7.firebasestorage.app",
+    messagingSenderId: "879538457604",
+    appId: "1:879538457604:web:36f59ceaa3859e43407951",
+    measurementId: "G-YWSWNQBX57"
+  };
+  // ===================================================================
+
+  let app = null;
+
+  function getDb() {
+    if (!app) {
+      app = firebase.initializeApp(firebaseConfig);
+    }
+    return firebase.firestore();
+  }
+
+  // Wraps batch.commit() with a watchdog: if it hasn't resolved after a
+  // few seconds, surface likely causes instead of leaving the UI stuck
+  // on "Connecting…" with no explanation.
+  function commitWithHint(batch, logFn) {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        logFn("… still waiting on Firestore after 6s. Common causes:", "err");
+        logFn("  1) No database created yet — Firestore Database tab should show your collections, not a \"Create database\" button", "err");
+        logFn("  2) An ad blocker/extension is blocking firestore.googleapis.com — check DevTools → Network for (blocked) requests", "err");
+        logFn("  3) Rules were saved but not Published", "err");
+        logFn("  4) Network/firewall blocking Google Cloud APIs", "err");
+      }
+    }, 6000);
+    return batch.commit().finally(() => {
+      settled = true;
+      clearTimeout(timer);
+    });
+  }
+
+  btn.addEventListener("click", async () => {
+    logEl.innerHTML = "";
+    btn.disabled = true;
+
+    try {
+      setStatus("Connecting to " + firebaseConfig.projectId + "…", "busy");
+      const db = getDb();
+      const data = buildData();
+      let written = 0;
+
+      for (const [collectionName, records] of Object.entries(data)) {
+        const batch = db.batch();
+        const ids = Object.keys(records);
+        ids.forEach((docId) => {
+          const ref = db.collection(collectionName).doc(docId);
+          batch.set(ref, records[docId]);
+        });
+        await commitWithHint(batch, log);
+        written += ids.length;
+        log(`✓ ${collectionName} — ${ids.length} record(s) written`, "ok");
+        setStatus(`${written}/30 documents written…`, "busy");
+      }
+
+      setStatus("Done — 30/30 documents written.", "ok");
+      log("\nAll 30 records are now in Firestore. Open the console to take your Part C screenshots.", "info");
+    } catch (e) {
+      setStatus("Failed: " + e.message, "error");
+      log("✗ " + e.message, "err");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // -----------------------------------------------------------------
+  // CSV / Excel upload
+  // -----------------------------------------------------------------
+  const fileInput = document.getElementById("fileInput");
+  const csvCollectionInput = document.getElementById("csvCollection");
+  const previewEl = document.getElementById("preview");
+  const uploadBtn = document.getElementById("uploadBtn");
+  const uploadLogEl = document.getElementById("uploadLog");
+  const uploadDot = document.getElementById("uploadDot");
+  const uploadStatusText = document.getElementById("uploadStatusText");
+
+  let parsedSheets = null; // { sheetName: [ {col: val, ...}, ... ], ... }
+
+  function uploadLog(msg, cls) {
+    const line = document.createElement("span");
+    line.className = "line" + (cls ? " " + cls : "");
+    line.textContent = msg;
+    uploadLogEl.appendChild(line);
+    uploadLogEl.scrollTop = uploadLogEl.scrollHeight;
+  }
+
+  function setUploadStatus(text, state) {
+    uploadStatusText.textContent = text;
+    uploadDot.className = "dot" + (state ? " " + state : "");
+  }
+
+  // Turns "true"/"false" into booleans, numeric-looking strings into
+  // numbers, and columns that look like dates (name ends in At/Date)
+  // into Firestore Timestamps. Anything else stays a string.
+  function coerceValue(colName, raw) {
+    if (raw === null || raw === undefined) return "";
+    if (typeof raw !== "string") {
+      // SheetJS may already give a JS Date for date-formatted Excel cells
+      if (raw instanceof Date) return firebase.firestore.Timestamp.fromDate(raw);
+      return raw;
+    }
+    const trimmed = raw.trim();
+    if (trimmed === "") return "";
+    if (/^(true|false)$/i.test(trimmed)) return trimmed.toLowerCase() === "true";
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
+    if (/(At|Date)$/.test(colName)) {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
+    }
+    return trimmed;
+  }
+
+  function renderPreview(sheets) {
+    previewEl.innerHTML = "";
+    const names = Object.keys(sheets);
+    if (names.length === 0) {
+      previewEl.innerHTML = '<div class="empty">No rows found in this file.</div>';
+      return;
+    }
+    names.forEach((sheetName) => {
+      const rows = sheets[sheetName];
+      const label = document.createElement("div");
+      label.className = "sheet-label";
+      label.textContent = `${sheetName} — ${rows.length} row(s)`;
+      previewEl.appendChild(label);
+
+      if (rows.length === 0) return;
+      const cols = Object.keys(rows[0]);
+      const table = document.createElement("table");
+      const thead = document.createElement("tr");
+      cols.forEach((c) => {
+        const th = document.createElement("th");
+        th.textContent = c;
+        thead.appendChild(th);
+      });
+      table.appendChild(thead);
+
+      rows.slice(0, 3).forEach((row) => {
+        const tr = document.createElement("tr");
+        cols.forEach((c) => {
+          const td = document.createElement("td");
+          td.textContent = row[c];
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      previewEl.appendChild(table);
+    });
+  }
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    uploadLogEl.innerHTML = "";
+    parsedSheets = null;
+    uploadBtn.disabled = true;
+
+    if (!file) {
+      setUploadStatus("Choose a file to begin.");
+      previewEl.innerHTML = "";
+      return;
+    }
+
+    setUploadStatus("Parsing " + file.name + "…", "busy");
+    const reader = new FileReader();
+    const isCsv = /\.csv$/i.test(file.name);
+
+    reader.onload = (e) => {
+      try {
+        const wb = isCsv
+          ? XLSX.read(e.target.result, { type: "string" })
+          : XLSX.read(e.target.result, { type: "array" });
+
+        const sheets = {};
+        wb.SheetNames.forEach((name) => {
+          sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: "", raw: true });
+        });
+        parsedSheets = sheets;
+        renderPreview(sheets);
+
+        const totalRows = Object.values(sheets).reduce((sum, r) => sum + r.length, 0);
+        setUploadStatus(`Parsed ${wb.SheetNames.length} sheet(s), ${totalRows} row(s). Ready to upload.`, "ok");
+        uploadBtn.disabled = totalRows === 0;
+      } catch (err) {
+        setUploadStatus("Could not parse file: " + err.message, "error");
+        uploadLog("✗ " + err.message, "err");
+      }
+    };
+
+    reader.onerror = () => {
+      setUploadStatus("Could not read file.", "error");
+    };
+
+    if (isCsv) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+  });
+
+  uploadBtn.addEventListener("click", async () => {
+    if (!parsedSheets) return;
+    uploadLogEl.innerHTML = "";
+    uploadBtn.disabled = true;
+
+    const sheetNames = Object.keys(parsedSheets);
+    const singleSheet = sheetNames.length === 1;
+    const manualCollection = csvCollectionInput.value.trim();
+
+    if (singleSheet && !manualCollection && /^Sheet1?$/i.test(sheetNames[0])) {
+      setUploadStatus("Type a collection name for this file first.", "error");
+      uploadLog("✗ Enter a collection name in the field above (this file's sheet has no useful name).", "err");
+      uploadBtn.disabled = false;
+      return;
+    }
+
+    try {
+      setUploadStatus("Connecting to " + firebaseConfig.projectId + "…", "busy");
+      const db = getDb();
+      let totalWritten = 0;
+
+      for (const sheetName of sheetNames) {
+        const rows = parsedSheets[sheetName];
+        if (rows.length === 0) continue;
+
+        const collectionName = singleSheet && manualCollection ? manualCollection : sheetName;
+        const cols = Object.keys(rows[0]);
+        const idCol = cols[0]; // convention: first column is the document ID
+
+        // Firestore batches cap at 500 ops — chunk generously below that.
+        for (let i = 0; i < rows.length; i += 400) {
+          const chunk = rows.slice(i, i + 400);
+          const batch = db.batch();
+          chunk.forEach((row) => {
+            const docId = String(row[idCol]).trim();
+            const data = {};
+            cols.slice(1).forEach((c) => {
+              data[c] = coerceValue(c, row[c]);
+            });
+            const ref = docId
+              ? db.collection(collectionName).doc(docId)
+              : db.collection(collectionName).doc();
+            batch.set(ref, data);
+          });
+          await commitWithHint(batch, uploadLog);
+        }
+
+        totalWritten += rows.length;
+        uploadLog(`✓ ${collectionName} — ${rows.length} record(s) written`, "ok");
+        setUploadStatus(`${totalWritten} document(s) written…`, "busy");
+      }
+
+      setUploadStatus(`Done — ${totalWritten} document(s) written.`, "ok");
+      uploadLog("\nAll rows from the file are now in Firestore.", "info");
+    } catch (e) {
+      setUploadStatus("Failed: " + e.message, "error");
+      uploadLog("✗ " + e.message, "err");
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
