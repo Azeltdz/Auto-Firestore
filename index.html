@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Azelt Code</title>
+<title>STAGE Firestore Seeder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
@@ -282,20 +282,34 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="eyebrow">Part C — Firebase Implementation</div>
+  <h1>STAGE Firestore Seeder</h1>
   <p class="sub">
-    Paste your Firebase project config, then seed all 30 dummy records from Part B into
+    Paste your Firebase project config below, then seed all 30 dummy records from Part B into
     <code>categories</code>, <code>users</code>, <code>content</code>, <code>subscriptions</code>,
     <code>watchHistory</code>, and <code>notifications</code> — no build tools, just this file opened in a browser.
   </p>
-  <p class="sub" style="margin-top:-20px;">
-    The Firebase config lives directly in the code below (search for
-    <code>const firebaseConfig</code> near the bottom of the file). To point this tool at a
-    different project, that's the only block you need to replace — everything else works
-    automatically once it's updated.
-  </p>
 
   <div class="card">
-    <h2>1. What will be written</h2>
+    <h2>1. Firebase config</h2>
+    <p class="filehelp">
+      Paste the config object exactly as copied from Firebase Console &rarr; Project settings
+      &rarr; General &rarr; Your apps. To point this tool at a different project, just replace
+      what's in this box — nothing else needs to change.
+    </p>
+    <textarea id="configInput" spellcheck="false">{
+  apiKey: "AIzaSyAaNGtXHb77YVH0wXohRBQ3tnbOv_wDJ8E",
+  authDomain: "test-e0fc7.firebaseapp.com",
+  projectId: "test-e0fc7",
+  storageBucket: "test-e0fc7.firebasestorage.app",
+  messagingSenderId: "879538457604",
+  appId: "1:879538457604:web:36f59ceaa3859e43407951",
+  measurementId: "G-YWSWNQBX57"
+}</textarea>
+  </div>
+
+  <div class="card">
+    <h2>2. What will be written</h2>
     <div class="grid">
       <div class="coll"><div class="name">categories</div><div class="count">5 records</div></div>
       <div class="coll"><div class="name">users</div><div class="count">6 records</div></div>
@@ -308,14 +322,14 @@
   </div>
 
   <div class="card">
-    <h2>2. Seed built-in dummy data</h2>
+    <h2>3. Seed built-in dummy data</h2>
     <button id="seedBtn">Seed 30 records into Firestore</button>
     <div class="status-line"><span class="dot" id="statusDot"></span><span id="statusText">Ready to seed.</span></div>
     <div id="log"></div>
   </div>
 
   <div class="card">
-    <h2>3. Or upload your own CSV / Excel file</h2>
+    <h2>4. Or upload your own CSV / Excel file</h2>
     <p class="filehelp">
       Convention: the <strong>first column</strong> of each sheet is used as the Firestore
       document ID; every other column becomes a field on that document. A workbook with
@@ -398,6 +412,7 @@
   const dot = document.getElementById("statusDot");
   const statusText = document.getElementById("statusText");
   const btn = document.getElementById("seedBtn");
+  const configInput = document.getElementById("configInput");
 
   function log(msg, cls) {
     const line = document.createElement("span");
@@ -412,27 +427,30 @@
     dot.className = "dot" + (state ? " " + state : "");
   }
 
-  // ===================================================================
-  // This is the ONLY block you need to replace to point this tool at a
-  // different Firebase project — paste the object exactly as copied
-  // from Firebase Console > Project settings > General > Your apps.
-  // ===================================================================
-  const firebaseConfig = {
-    apiKey: "AIzaSyAaNGtXHb77YVH0wXohRBQ3tnbOv_wDJ8E",
-    authDomain: "test-e0fc7.firebaseapp.com",
-    projectId: "test-e0fc7",
-    storageBucket: "test-e0fc7.firebasestorage.app",
-    messagingSenderId: "879538457604",
-    appId: "1:879538457604:web:36f59ceaa3859e43407951",
-    measurementId: "G-YWSWNQBX57"
-  };
-  // ===================================================================
+  function parseConfig(raw) {
+    // Accepts the object exactly as copied from the Firebase console
+    // (unquoted keys), not strict JSON — so we evaluate it as JS.
+    const trimmed = raw.trim();
+    if (!trimmed) throw new Error("Config is empty.");
+    const config = new Function("return (" + trimmed + ")")();
+    if (!config.projectId) throw new Error("Config has no projectId — paste the full object.");
+    return config;
+  }
 
   let app = null;
+  let lastConfigKey = null;
 
-  function getDb() {
+  // Re-initializes the Firebase app whenever the pasted config changes,
+  // so you can edit the box and click a button again without reloading.
+  async function getDb(config) {
+    const key = JSON.stringify(config);
+    if (app && key !== lastConfigKey) {
+      await app.delete();
+      app = null;
+    }
     if (!app) {
-      app = firebase.initializeApp(firebaseConfig);
+      app = firebase.initializeApp(config);
+      lastConfigKey = key;
     }
     return firebase.firestore();
   }
@@ -461,9 +479,19 @@
     logEl.innerHTML = "";
     btn.disabled = true;
 
+    let config;
     try {
-      setStatus("Connecting to " + firebaseConfig.projectId + "…", "busy");
-      const db = getDb();
+      config = parseConfig(configInput.value);
+    } catch (e) {
+      setStatus("Invalid config: " + e.message, "error");
+      log("✗ " + e.message, "err");
+      btn.disabled = false;
+      return;
+    }
+
+    try {
+      setStatus("Connecting to " + config.projectId + "…", "busy");
+      const db = await getDb(config);
       const data = buildData();
       let written = 0;
 
@@ -629,6 +657,16 @@
     uploadLogEl.innerHTML = "";
     uploadBtn.disabled = true;
 
+    let config;
+    try {
+      config = parseConfig(configInput.value);
+    } catch (e) {
+      setUploadStatus("Invalid config: " + e.message, "error");
+      uploadLog("✗ " + e.message, "err");
+      uploadBtn.disabled = false;
+      return;
+    }
+
     const sheetNames = Object.keys(parsedSheets);
     const singleSheet = sheetNames.length === 1;
     const manualCollection = csvCollectionInput.value.trim();
@@ -641,8 +679,8 @@
     }
 
     try {
-      setUploadStatus("Connecting to " + firebaseConfig.projectId + "…", "busy");
-      const db = getDb();
+      setUploadStatus("Connecting to " + config.projectId + "…", "busy");
+      const db = await getDb(config);
       let totalWritten = 0;
 
       for (const sheetName of sheetNames) {
